@@ -58,9 +58,7 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
     
     // Cleanup when component unmounts or spinning changes
     return () => {
-      if (!isSpinning) {
-        stopVinylSound();
-      }
+      stopVinylSound();
     };
   }, [isSpinning, playVinylRewindSound, stopVinylSound]);
 
@@ -85,12 +83,12 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
         }}
         animate={isSpinning ? { 
           boxShadow: isRoulette ? 
-            '0 0 40px rgba(220, 38, 38, 0.6)' : 
-            '0 0 40px rgba(16, 185, 129, 0.6)',
+            '0 0 30px rgba(220, 38, 38, 0.5)' : 
+            '0 0 30px rgba(16, 185, 129, 0.5)',
           borderColor: isRoulette ? "#dc2626" : "#10b981"
         } : isRoulette ? { borderColor: "#dc2626" } : {}}
-        initial={isRoulette ? { borderColor: "#10b981" } : {}}
-        transition={{ duration: isRoulette ? 1.5 : 1.5, ease: "easeInOut", repeat: isSpinning ? Infinity : 0 }}
+        initial={isRoulette ? { borderColor: "#dc2626" } : {}}
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         {/* Vinyl record surface */}
         <motion.div
@@ -100,17 +98,14 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
               ? "radial-gradient(circle at 40% 40%, #4a1a1a 0%, #3a1515 20%, #2a1010 40%, #1a0808 70%, #0f0404 100%)"
               : "radial-gradient(circle at 40% 40%, #333333 0%, #2a2a2a 20%, #1a1a1a 40%, #0f0f0f 70%, #0a0a0a 100%)",
           }}
-          animate={isSpinning ? { rotate: [0, 720, 1800, 2160] } : { rotate: 0 }}
+          animate={isSpinning ? { rotate: 2160 } : { rotate: 0 }}
           transition={{ 
             duration: isSpinning ? 3.5 : 0.3, 
-            ease: isSpinning ? [0.1, 0.4, 0.7, 0.95] : "easeOut",
-            times: isSpinning ? [0, 0.3, 0.8, 1] : undefined,
+            ease: isSpinning ? "easeOut" : "easeOut",
             onComplete: () => {
               if (isSpinning) {
-                // Force immediate audio stop - multiple calls to ensure it stops
+                // Clean audio stop
                 stopVinylSound();
-                setTimeout(() => stopVinylSound(), 0);
-                setTimeout(() => stopVinylSound(), 10);
                 setHasSpun(true);
                 onSpinComplete?.();
               }

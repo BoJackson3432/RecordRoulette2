@@ -69,7 +69,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Only allow specific origins when using credentials
     const allowedOrigins = [
       'http://localhost:5000',
-      'http://localhost:3000', 
+      'http://localhost:3000',
+      'http://127.0.0.1:5000',
       'https://www.recordroulette.com',
       'https://recordroulette.com'
     ];
