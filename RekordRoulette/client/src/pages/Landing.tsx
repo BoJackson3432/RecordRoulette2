@@ -178,13 +178,8 @@ export default function Landing() {
       return;
     }
     
-    // Play appropriate sound effects
-    if (selectedMode === 'roulette') {
-      playGunshotSound();
-    } else {
-      // Play needledrop sound for all other modes (vinyl experience)
-      playNeedledropSound();
-    }
+    // Play dramatic gunshot sound for ALL modes for consistent experience
+    playGunshotSound();
     
     spinMutation.mutate(selectedMode);
   };
