@@ -129,22 +129,16 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
                 : isRoulette ? "0 0 10px rgba(220, 38, 38, 0.3)" : "0 0 10px rgba(245, 158, 11, 0.3)"
             }}
             animate={isSpinning ? { 
-              boxShadow: isRoulette ? [
-                "0 0 15px rgba(220, 38, 38, 0.4)", 
-                "0 0 25px rgba(220, 38, 38, 0.8)", 
-                "0 0 15px rgba(220, 38, 38, 0.4)"
-              ] : [
-                "0 0 15px rgba(245, 158, 11, 0.4)", 
-                "0 0 25px rgba(245, 158, 11, 0.8)", 
-                "0 0 15px rgba(245, 158, 11, 0.4)"
-              ]
+              boxShadow: isRoulette ? 
+                "0 0 20px rgba(220, 38, 38, 0.6)" : 
+                "0 0 20px rgba(245, 158, 11, 0.6)"
             } : {}}
-            transition={{ duration: 2, ease: "easeInOut", repeat: isSpinning ? Infinity : 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
             <motion.i 
               className={`fas ${isRoulette ? 'fa-crosshairs' : 'fa-music'} text-white text-3xl`}
-              animate={isSpinning ? { scale: [1, 1.1, 1] } : {}}
-              transition={{ duration: 2.5, ease: "easeInOut", repeat: isSpinning ? Infinity : 0 }}
+              animate={isSpinning ? { scale: 1.05 } : { scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
             ></motion.i>
           </motion.div>
           
@@ -262,7 +256,7 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
               opacity: 0.6
             }}
             animate={isSpinning ? { rotate: 360 } : { rotate: 0 }}
-            transition={{ duration: 8, ease: "linear", repeat: isSpinning ? Infinity : 0 }}
+            transition={{ duration: 3.5, ease: "linear", repeat: isSpinning ? Infinity : 0 }}
           />
           
           {/* Vinyl surface texture */}
@@ -291,8 +285,8 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
           >
             <div className="text-center">
               <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 2, ease: "linear", repeat: Infinity }}
                 className="text-primary text-2xl mb-2"
               >
                 <i className="fas fa-compact-disc"></i>
