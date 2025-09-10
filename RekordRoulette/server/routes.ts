@@ -448,6 +448,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "No albums found for preview" });
       }
 
+      // Apply STRICT professional quality filtering - NO EXCEPTIONS
+      const filterProfessionalQuality = (albums: any[]) => {
+        const isGreatestHits = (album: any): boolean => {
+          const albumName = album.name?.toLowerCase() || "";
+          const albumType = album.album_type?.toLowerCase() || "";
+          
+          if (albumType === "compilation") return true;
+          
+          const greatestHitsPatterns = [
+            "greatest hits", "best of", "the best of", "greatest", "hits", "collection", "anthology",
+            "essential", "essentials", "complete", "ultimate", "platinum", "gold", "definitive",
+            "very best", "singles", "compilation", "retrospective", "selected", "classics", "favorites", "favourites"
+          ];
+          
+          return greatestHitsPatterns.some(pattern => albumName.includes(pattern));
+        };
+
+        // STRICT FILTERING: Must be 5+ tracks AND not greatest hits - NO FALLBACKS
+        return albums.filter(album => !isGreatestHits(album) && album.total_tracks >= 5);
+      };
+
+      selectedAlbums = filterProfessionalQuality(selectedAlbums);
+
+      // Ensure we have professional quality albums - if not, return error
+      if (selectedAlbums.length === 0) {
+        return res.status(404).json({ error: "No professional quality albums found for this discovery mode. All albums were filtered out due to being greatest hits/compilations or having fewer than 5 songs." });
+      }
+
       // Pick random album for preview
       const randomAlbum = selectedAlbums[Math.floor(Math.random() * selectedAlbums.length)];
 
@@ -538,6 +566,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         album = await storage.upsertAlbum(albumData);
+      }
+
+      // PROFESSIONAL QUALITY VALIDATION - Prevent committing to poor quality albums
+      const isGreatestHits = (album: any): boolean => {
+        const albumName = album.name?.toLowerCase() || "";
+        const albumType = album.album_type?.toLowerCase() || "";
+        
+        if (albumType === "compilation") return true;
+        
+        const patterns = [
+          "greatest hits", "best of", "the best of", "greatest", "hits", "collection", "anthology",
+          "essential", "essentials", "complete", "ultimate", "platinum", "gold", "definitive", 
+          "very best", "singles", "compilation", "retrospective", "selected", "classics", "favorites", "favourites"
+        ];
+        
+        return patterns.some(pattern => albumName.includes(pattern));
+      };
+
+      // ALWAYS fetch full album details from Spotify for robust validation
+      const albumResponse = await axios.get(`https://api.spotify.com/v1/albums/${albumId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const albumForValidation = albumResponse.data;
+
+      // Validate professional quality requirements
+      if (isGreatestHits(albumForValidation)) {
+        return res.status(400).json({ 
+          error: "This appears to be a greatest hits or compilation album. We focus on original studio albums for a better discovery experience." 
+        });
+      }
+
+      if ((albumForValidation.total_tracks || 0) < 5) {
+        return res.status(400).json({ 
+          error: "This album has fewer than 5 songs. We focus on full-length albums for a complete listening experience." 
+        });
       }
 
       // Create spin record
@@ -877,69 +940,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Filter out greatest hits and compilation albums
-      const isGreatestHits = (album: any): boolean => {
-        const albumName = album.name?.toLowerCase() || "";
-        const albumType = album.album_type?.toLowerCase() || "";
+      // Filter out greatest hits and compilation albums using shared function
+      const filterProfessionalQuality = (albums: any[]) => {
+        console.log(`Starting with ${albums.length} albums before professional quality filtering`);
         
-        // Check album type first - compilation albums are typically greatest hits
-        if (albumType === "compilation") {
-          return true;
+        const isGreatestHits = (album: any): boolean => {
+          const albumName = album.name?.toLowerCase() || "";
+          const albumType = album.album_type?.toLowerCase() || "";
+          
+          // Check album type first - compilation albums are typically greatest hits
+          if (albumType === "compilation") {
+            return true;
+          }
+          
+          const greatestHitsPatterns = [
+            "greatest hits",
+            "best of",
+            "the best of",
+            "greatest",
+            "hits",
+            "collection",
+            "anthology", 
+            "essential",
+            "essentials",
+            "complete",
+            "ultimate",
+            "platinum",
+            "gold",
+            "definitive",
+            "very best",
+            "singles",
+            "compilation",
+            "retrospective",
+            "selected",
+            "classics",
+            "favorites",
+            "favourites"
+          ];
+          
+          return greatestHitsPatterns.some(pattern => albumName.includes(pattern));
+        };
+
+        // Store original albums before filtering
+        const originalAlbums = [...albums];
+        const originalCount = albums.length;
+        
+        // Remove greatest hits albums
+        let filteredAlbums = albums.filter(album => !isGreatestHits(album));
+        
+        if (filteredAlbums.length < originalCount) {
+          console.log(`Filtered out ${originalCount - filteredAlbums.length} greatest hits albums`);
         }
         
-        const greatestHitsPatterns = [
-          "greatest hits",
-          "best of",
-          "the best of",
-          "greatest",
-          "hits",
-          "collection",
-          "anthology", 
-          "essential",
-          "essentials",
-          "complete",
-          "ultimate",
-          "platinum",
-          "gold",
-          "definitive",
-          "very best",
-          "singles",
-          "compilation",
-          "retrospective",
-          "selected",
-          "classics",
-          "favorites",
-          "favourites"
-        ];
+        // Filter out singles and short EPs - ensure albums have at least 5 tracks
+        const beforeTrackFilter = filteredAlbums.length;
+        filteredAlbums = filteredAlbums.filter(album => album.total_tracks >= 5);
         
-        return greatestHitsPatterns.some(pattern => albumName.includes(pattern));
-      };
-      
-      // Store original albums before filtering
-      const originalAlbums = [...albums];
-      const originalCount = albums.length;
-      
-      // Remove greatest hits albums
-      albums = albums.filter(album => !isGreatestHits(album));
-      
-      if (albums.length < originalCount) {
-        console.log(`Filtered out ${originalCount - albums.length} greatest hits albums`);
-      }
-      
-      // If we filtered out too many albums and have very few left, allow some back
-      if (albums.length < 3 && originalCount > 3) {
-        console.log("Too few albums after filtering, keeping some greatest hits for variety");
-        const greatestHitsAlbums = originalAlbums.filter(album => isGreatestHits(album));
-        albums = albums.concat(greatestHitsAlbums.slice(0, Math.min(5, originalCount - albums.length)));
-      }
+        if (filteredAlbums.length < beforeTrackFilter) {
+          console.log(`Filtered out ${beforeTrackFilter - filteredAlbums.length} singles/short EPs (albums with < 5 tracks)`);
+        }
 
-      // Filter out singles and short EPs - ensure albums have at least 5 tracks for professional quality
-      const beforeTrackFilter = albums.length;
-      albums = albums.filter(album => album.total_tracks >= 5);
-      
-      if (albums.length < beforeTrackFilter) {
-        console.log(`Filtered out ${beforeTrackFilter - albums.length} singles/short EPs (albums with < 5 tracks)`);
-      }
+        // If we filtered out too many albums and have very few left, allow some back for variety
+        if (filteredAlbums.length < 3 && originalCount > 3) {
+          console.log("Too few albums after filtering, keeping some for variety");
+          const moreAlbums = originalAlbums.filter(album => !isGreatestHits(album) && album.total_tracks >= 4);
+          filteredAlbums = filteredAlbums.concat(moreAlbums.slice(0, Math.min(5, originalCount - filteredAlbums.length)));
+        }
+
+        console.log(`Professional quality filtering complete: ${filteredAlbums.length} albums remaining`);
+        return filteredAlbums;
+      };
+
+      // Apply professional quality filtering
+      albums = filterProfessionalQuality(albums);
 
       // Get recent spins to avoid duplicates (last 30 days)
       const recentSpins = await storage.getRecentSpinsByUser(req.session.userId, 30);
