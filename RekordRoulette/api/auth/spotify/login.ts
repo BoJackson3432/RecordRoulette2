@@ -1,9 +1,11 @@
+import { randomBytes } from 'crypto';
+
 export default function handler(req: any, res: any) {
   try {
-    const state = Math.random().toString(36).substring(7);
+    const state = randomBytes(16).toString('base64url');
     
     // Store state in cookie for verification
-    res.setHeader('Set-Cookie', `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; SameSite=Lax`);
+    res.setHeader('Set-Cookie', `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; SameSite=Lax; Secure`);
     
     // Build Spotify auth URL
     const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';

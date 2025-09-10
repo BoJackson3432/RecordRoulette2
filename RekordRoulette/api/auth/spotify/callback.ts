@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createHmac } from 'crypto';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -29,7 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redirect_uri: REDIRECT_URI,
     });
 
-    // Use fetch instead of axios
+    // Exchange code for tokens with proper error handling
     const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
       method: 'POST',
       headers: {
@@ -39,26 +40,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: params.toString()
     });
     
+    if (!tokenResponse.ok) {
+      console.error('Token exchange failed:', tokenResponse.status);
+      return res.redirect('/?error=token_exchange_failed');
+    }
+    
     const tokens = await tokenResponse.json();
     
-    // Get user info from Spotify
+    if (!tokens.access_token) {
+      console.error('No access token in response:', tokens);
+      return res.redirect('/?error=invalid_token_response');
+    }
+    
+    // Get user info from Spotify with error handling
     const userResponse = await fetch("https://api.spotify.com/v1/me", {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     
+    if (!userResponse.ok) {
+      console.error('User info fetch failed:', userResponse.status);
+      return res.redirect('/?error=user_fetch_failed');
+    }
+    
     const spotifyUser = await userResponse.json();
     
-    // Create simple session - no JWT for now
+    if (!spotifyUser.id) {
+      console.error('No user ID in Spotify response:', spotifyUser);
+      return res.redirect('/?error=invalid_user_response');
+    }
+    
+    // Create secure session with validation token
     const userInfo = {
       id: `spotify-${spotifyUser.id}`,
       name: spotifyUser.display_name || spotifyUser.id,
       email: spotifyUser.email
     };
     
+    // Create cryptographically signed session token
+    const sessionData = {
+      userId: userInfo.id,
+      email: spotifyUser.email,
+      iat: Math.floor(Date.now() / 1000), // issued at (seconds)
+      exp: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // expires in 7 days
+    };
+    
+    const payload = Buffer.from(JSON.stringify(sessionData)).toString('base64url');
+    const secret = process.env.SESSION_SECRET || 'fallback-dev-secret-change-in-production';
+    const signature = createHmac('sha256', secret).update(payload).digest('base64url');
+    const sessionToken = `${payload}.${signature}`;
+    
     // Set secure session cookies
     res.setHeader('Set-Cookie', [
       `user_id=${userInfo.id}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`,
       `user_name=${encodeURIComponent(userInfo.name)}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`,
+      `session_token=${sessionToken}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`,
       'oauth_state=; HttpOnly; Path=/; Max-Age=0; Secure'
     ]);
     
