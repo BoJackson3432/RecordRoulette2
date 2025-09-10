@@ -207,7 +207,10 @@ export default function MoodDiscovery() {
                   className="flex items-center gap-2"
                   data-testid="button-time-current"
                 >
-                  <getCurrentTimeContext().icon size={16} />
+                  {(() => {
+                    const CurrentIcon = getCurrentTimeContext().icon;
+                    return <CurrentIcon size={16} />;
+                  })()}
                   {getCurrentTimeContext().name}
                   <Badge variant="secondary" className="ml-2">Recommended</Badge>
                 </Button>
