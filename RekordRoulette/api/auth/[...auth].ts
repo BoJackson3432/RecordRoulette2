@@ -16,12 +16,25 @@ export default function handler(req: any, res: any) {
         // Handle Spotify OAuth callback
         const { code, error } = req.query;
         if (error) {
-          return res.status(400).json({ error: 'Spotify authorization failed' });
+          return res.redirect('/?error=auth_failed');
         }
         
-        // In production, exchange code for tokens and create session
-        // For demo, just redirect to success
-        res.redirect('/?auth=success');
+        if (code) {
+          // For demo: create a mock session with proper authentication
+          const mockUser = {
+            id: `user_${Date.now()}`,
+            displayName: 'Demo User',
+            email: 'demo@recordroulette.com',
+            spotifyId: 'demo_spotify_user'
+          };
+          
+          // Set session cookie (simplified for demo)
+          const sessionData = JSON.stringify(mockUser);
+          res.setHeader('Set-Cookie', `session=${Buffer.from(sessionData).toString('base64')}; Path=/; HttpOnly; SameSite=Strict`);
+          res.redirect('/?auth=success');
+        } else {
+          res.redirect('/?error=no_code');
+        }
         break;
 
       case 'logout':

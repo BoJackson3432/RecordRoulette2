@@ -52,8 +52,8 @@ function validateAPIFunctions() {
   }
   
   const requiredEndpoints = [
-    'user.ts',
-    'spin.ts', 
+    'user/[...user].ts',
+    'spin/[...spin].ts', 
     'listened.ts',
     'auth/[...auth].ts',
     'discover/[...discover].ts',

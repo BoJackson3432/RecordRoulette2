@@ -1,14 +1,15 @@
-import { requireAuthentication } from '../shared/auth';
+import { requireAuthentication } from '../../shared/auth';
 
 export default function handler(req: any, res: any) {
   try {
     const user = requireAuthentication(req, res);
     if (!user) return;
 
-    const path = req.url.split('?')[0];
+    const { spin } = req.query;
+    const route = Array.isArray(spin) ? spin.join('/') : spin || '';
 
-    if (path.includes('/can-spin') || req.query.action === 'can-spin') {
-      // Check if user can spin
+    if (route === 'can-spin') {
+      // Can-spin check endpoint
       const canSpinData = {
         canSpin: true,
         spinsRemaining: 5,
@@ -17,8 +18,8 @@ export default function handler(req: any, res: any) {
       };
       res.status(200).json(canSpinData);
     } else if (req.method === 'POST') {
-      // Create new spin - stub data
-      const spin = {
+      // Create new spin - main endpoint
+      const spinData = {
         id: `spin-${Date.now()}`,
         userId: user.id,
         album: {
@@ -36,21 +37,12 @@ export default function handler(req: any, res: any) {
         listened: false
       };
 
-      res.status(200).json(spin);
-    } else if (req.method === 'GET') {
-      // Default to can-spin check for GET requests
-      const canSpinData = {
-        canSpin: true,
-        spinsRemaining: 5,
-        nextResetTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-        isPremium: false
-      };
-      res.status(200).json(canSpinData);
+      res.status(200).json(spinData);
     } else {
       res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
-    console.error('API /spin error:', error);
+    console.error('Spin API error:', error);
     res.status(500).json({ error: 'Failed to handle spin request' });
   }
 }
