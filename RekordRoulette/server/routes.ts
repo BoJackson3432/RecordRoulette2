@@ -60,6 +60,19 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add CORS headers for production
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization');
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+
   // Serve PWA files with correct MIME types
   app.get('/sw.js', (req, res) => {
     res.setHeader('Content-Type', 'application/javascript');
@@ -88,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     cookie: { 
       httpOnly: true, 
       sameSite: "lax", 
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Fixed: disable secure cookies for now
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   }));
