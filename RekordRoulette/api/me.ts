@@ -1,21 +1,17 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getSessionUserId } from './auth/session';
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req: any, res: any) {
   try {
-    // Check if user is authenticated
-    const userId = getSessionUserId(req);
+    // Check if user is authenticated via simple cookie
+    const userId = req.cookies.user_id;
+    const userName = req.cookies.user_name;
+    
     if (!userId) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Extract Spotify ID from user ID
-    const spotifyId = userId.replace('spotify-', '');
-    
-    // Return mock user data for now (will connect to database later)
+    // Return user data from cookies
     res.status(200).json({
       id: userId,
-      displayName: `Spotify User ${spotifyId.substring(0, 8)}`,
+      displayName: decodeURIComponent(userName || 'Spotify User'),
       email: 'user@spotify.com',
       avatarUrl: null,
       onboardingCompleted: true,

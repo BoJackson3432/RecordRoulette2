@@ -1,40 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import axios from 'axios';
-import { createSession, setSessionCookie } from '../session';
-
-const SPOTIFY_CONFIG = {
-  CLIENT_ID: process.env.SPOTIFY_CLIENT_ID!,
-  CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET!,
-  TOKEN_URL: "https://accounts.spotify.com/api/token",
-  API_BASE: "https://api.spotify.com/v1",
-  REDIRECT_URI: process.env.SPOTIFY_REDIRECT_URI!,
-};
-
-async function exchangeCodeForTokens(code: string) {
-  const params = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    redirect_uri: SPOTIFY_CONFIG.REDIRECT_URI,
-  });
-
-  const response = await axios.post(SPOTIFY_CONFIG.TOKEN_URL, params.toString(), {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${SPOTIFY_CONFIG.CLIENT_ID}:${SPOTIFY_CONFIG.CLIENT_SECRET}`).toString("base64")}`,
-    },
-  });
-
-  return response.data;
-}
-
-async function getSpotifyUser(accessToken: string) {
-  const response = await axios.get(`${SPOTIFY_CONFIG.API_BASE}/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  return response.data;
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   try {
     const { code, state, error } = req.query;
 
@@ -52,21 +16,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect('/?error=invalid_state');
     }
 
-    // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(code);
+    // Exchange code for tokens - simplified
+    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+    const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+    const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://recordroulette.com/api/auth/spotify/callback';
+    
+    const params = new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: REDIRECT_URI,
+    });
+
+    // Use fetch instead of axios
+    const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+      },
+      body: params.toString()
+    });
+    
+    const tokens = await tokenResponse.json();
     
     // Get user info from Spotify
-    const spotifyUser = await getSpotifyUser(tokens.access_token);
+    const userResponse = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${tokens.access_token}` },
+    });
     
-    // For now, create a mock user session until database is connected
-    const mockUserId = `spotify-${spotifyUser.id}`;
+    const spotifyUser = await userResponse.json();
     
-    // Create session token
-    const sessionToken = createSession(mockUserId);
-    setSessionCookie(res, sessionToken);
+    // Create simple session - no JWT for now
+    const userInfo = {
+      id: `spotify-${spotifyUser.id}`,
+      name: spotifyUser.display_name || spotifyUser.id,
+      email: spotifyUser.email
+    };
     
-    // Clear oauth state cookie
-    res.setHeader('Set-Cookie', 'oauth_state=; HttpOnly; Path=/; Max-Age=0');
+    // Set simple session cookie
+    res.setHeader('Set-Cookie', [
+      `user_id=${userInfo.id}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax`,
+      `user_name=${encodeURIComponent(userInfo.name)}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax`,
+      'oauth_state=; HttpOnly; Path=/; Max-Age=0'
+    ]);
     
     res.redirect('/');
   } catch (error) {
