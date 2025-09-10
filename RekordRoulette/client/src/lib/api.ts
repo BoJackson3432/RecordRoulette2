@@ -50,7 +50,9 @@ export const api = {
   },
 
   async logout(): Promise<void> {
-    await apiRequest("GET", "/auth/logout");
+    // Use different routes for development vs production
+    const logoutUrl = import.meta.env.DEV ? "/auth/logout" : "/api/auth/logout";
+    await apiRequest("GET", logoutUrl);
   },
 
   getSpotifyLoginUrl(): string {

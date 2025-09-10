@@ -55,11 +55,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       email: spotifyUser.email
     };
     
-    // Set simple session cookie
+    // Set secure session cookies
     res.setHeader('Set-Cookie', [
-      `user_id=${userInfo.id}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax`,
-      `user_name=${encodeURIComponent(userInfo.name)}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax`,
-      'oauth_state=; HttpOnly; Path=/; Max-Age=0'
+      `user_id=${userInfo.id}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`,
+      `user_name=${encodeURIComponent(userInfo.name)}; HttpOnly; Path=/; Max-Age=604800; SameSite=Lax; Secure`,
+      'oauth_state=; HttpOnly; Path=/; Max-Age=0; Secure'
     ]);
     
     res.redirect('/');
