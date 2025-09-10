@@ -274,6 +274,7 @@ function Router() {
       <Route path="/help" component={HelpCenter} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
+      <Route path="/auth/callback" component={() => { window.location.href = '/'; return null; }} />
       <Route component={NotFound} />
     </Switch>
   );
