@@ -38,7 +38,7 @@ export default function ReferralDashboard() {
       return response.json();
     },
     onSuccess: (data, platform) => {
-      if (navigator.share && platform === 'native') {
+      if (typeof navigator.share === 'function' && platform === 'native') {
         navigator.share({
           title: 'RecordRoulette - Music Discovery',
           text: data.content,
@@ -263,7 +263,7 @@ export default function ReferralDashboard() {
                         >
                           Twitter
                         </Button>
-                        {navigator.share && (
+                        {typeof navigator.share === 'function' && (
                           <Button 
                             onClick={() => shareMutation.mutate('native')}
                             variant="outline"

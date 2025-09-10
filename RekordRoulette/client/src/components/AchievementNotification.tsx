@@ -117,7 +117,7 @@ export default function AchievementNotification({
     try {
       if (platform === 'twitter') {
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
-      } else if (navigator.share && platform === 'general') {
+      } else if (typeof navigator.share === 'function' && platform === 'general') {
         await navigator.share({
           title: `🏆 ${currentTrophy.name}`,
           text: text

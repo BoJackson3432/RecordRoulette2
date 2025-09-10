@@ -70,7 +70,7 @@ export default function Leaderboards() {
       return response.json();
     },
     onSuccess: (data, { platform }) => {
-      if (navigator.share && platform === 'native') {
+      if (typeof navigator.share === 'function' && platform === 'native') {
         navigator.share({
           title: data.title,
           text: data.description,
@@ -403,7 +403,7 @@ export default function Leaderboards() {
                   >
                     Twitter
                   </Button>
-                  {navigator.share && (
+                  {typeof navigator.share === 'function' && (
                     <Button 
                       onClick={() => shareMutation.mutate({ platform: 'native', entry: selectedEntry, rank: selectedEntry.rank })}
                       disabled={shareMutation.isPending}
