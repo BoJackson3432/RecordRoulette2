@@ -45,7 +45,7 @@ export interface SpinHistory {
 export const api = {
   // Auth
   async getProfile(): Promise<UserProfile> {
-    const res = await apiRequest("GET", "/api/me");
+    const res = await apiRequest("GET", "/api/user");
     return res.json();
   },
 

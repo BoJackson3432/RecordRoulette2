@@ -52,12 +52,12 @@ function validateAPIFunctions() {
   }
   
   const requiredEndpoints = [
-    'me.ts',
+    'user.ts',
     'spin.ts', 
     'listened.ts',
-    'leaderboards.ts',
-    'trophies.ts',
-    'moods.ts'
+    'auth/[...auth].ts',
+    'discover/[...discover].ts',
+    'leaderboards/[...leaderboards].ts'
   ];
   
   for (const endpoint of requiredEndpoints) {
