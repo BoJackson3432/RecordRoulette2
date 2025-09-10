@@ -12,6 +12,6 @@
     }
   ],
   "env": {
-    "SPOTIFY_REDIRECT_URI": "https://recordroulette.com/api/auth/spotify/callback"
+    "SPOTIFY_REDIRECT_URI": "https://www.recordroulette.com/api/auth/spotify/callback"
   }
 }
