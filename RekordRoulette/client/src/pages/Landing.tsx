@@ -164,7 +164,7 @@ export default function Landing() {
     
     // If user is not logged in, redirect to Spotify login
     if (!profile) {
-      window.location.href = "/auth/spotify/login";
+      window.location.href = api.getSpotifyLoginUrl();
       return;
     }
 
