@@ -1,70 +1,22 @@
-import { createHmac } from 'crypto';
+import { requireAuthentication } from '../shared/auth';
 
 export default function handler(req: any, res: any) {
   try {
     // Log request info for debugging (no sensitive data)
     console.log('API /me called, has cookies:', Object.keys(req.cookies || {}));
     
-    // Check if user is authenticated via secure session
-    const userId = req.cookies?.user_id;
-    const userName = req.cookies?.user_name;
-    const sessionToken = req.cookies?.session_token;
-    
-    console.log('Auth check - userId:', userId, 'userName:', userName, 'hasToken:', !!sessionToken);
-    
-    if (!userId || !userId.startsWith('spotify-') || !sessionToken) {
-      console.log('Not authenticated - missing credentials');
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    
-    // Verify cryptographically signed session token
-    try {
-      const [payloadB64, signatureB64] = sessionToken.split('.');
-      if (!payloadB64 || !signatureB64) {
-        console.log('Invalid token format - missing parts');
-        return res.status(401).json({ error: 'Invalid token format' });
-      }
-      
-      // Verify signature  
-      const secret = process.env.SESSION_SECRET;
-      
-      if (!secret) {
-        console.error('SESSION_SECRET environment variable is required');
-        return res.status(500).json({ error: 'Server configuration error' });
-      }
-      
-      const expectedSignature = createHmac('sha256', secret).update(payloadB64).digest('base64url');
-      
-      if (signatureB64 !== expectedSignature) {
-        console.log('Invalid token signature');
-        return res.status(401).json({ error: 'Invalid token signature' });
-      }
-      
-      // Decode and validate payload
-      const sessionData = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
-      
-      if (sessionData.userId !== userId) {
-        console.log('Token user ID mismatch');
-        return res.status(401).json({ error: 'Token user mismatch' });
-      }
-      
-      // Check expiration (exp is in seconds)
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      if (sessionData.exp && nowSeconds > sessionData.exp) {
-        console.log('Token expired');
-        return res.status(401).json({ error: 'Token expired' });
-      }
-      
-    } catch (error) {
-      console.log('Token validation error - no sensitive data logged');
-      return res.status(401).json({ error: 'Invalid token' });
+    // Verify HMAC authentication
+    const user = requireAuthentication(req, res);
+    if (!user) {
+      // requireAuthentication already sent error response
+      return;
     }
 
-    // Return user data from cookies
+    // Return user data with additional profile information
     const userData = {
-      id: userId,
-      displayName: decodeURIComponent(userName || 'Spotify User'),
-      email: 'user@spotify.com',
+      id: user.id,
+      displayName: user.displayName,
+      email: user.email,
       avatarUrl: null,
       onboardingCompleted: true,
       streak: { current: 0, longest: 0 }

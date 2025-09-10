@@ -1,9 +1,12 @@
+import { requireAuthentication } from '../shared/auth';
+
 export default function handler(req: any, res: any) {
   try {
-    // Check if user is authenticated
-    const userId = req.cookies?.user_id;
-    if (!userId || !userId.startsWith('spotify-')) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    // Verify HMAC authentication
+    const user = requireAuthentication(req, res);
+    if (!user) {
+      // requireAuthentication already sent error response
+      return;
     }
 
     // Mock response for marking as listened
