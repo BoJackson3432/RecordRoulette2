@@ -76,8 +76,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ];
     
     // Add current Replit dev domain in development
-    if (process.env.NODE_ENV === 'development' && process.env.REPL_SLUG) {
-      allowedOrigins.push(`https://${process.env.REPL_ID}.${process.env.REPL_SLUG}.replit.dev`);
+    if (process.env.NODE_ENV === 'development') {
+      if (process.env.REPLIT_DEV_DOMAIN) {
+        allowedOrigins.push(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+      }
+      if (process.env.REPL_SLUG) {
+        allowedOrigins.push(`https://${process.env.REPL_ID}.${process.env.REPL_SLUG}.replit.dev`);
+      }
     }
     
     const requestOrigin = req.headers.origin;

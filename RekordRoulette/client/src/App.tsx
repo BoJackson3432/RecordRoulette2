@@ -98,8 +98,9 @@ function AppContent() {
     refetchOnMount: false, // Don't refetch when component mounts
   });
 
-  // Only show loading on first load, not on subsequent failed auth attempts
-  if (userLoading && !error && user === undefined) {
+  // Only show loading on initial load to prevent logo blinking during auth changes
+  const isInitialLoad = userLoading && user === undefined && error === null;
+  if (isInitialLoad) {
     return <AppLoading />;
   }
 

@@ -51,7 +51,7 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   // Content Security Policy (adjust for your needs)
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://kit.fontawesome.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://kit.fontawesome.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.spotify.com https://accounts.spotify.com;"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://kit.fontawesome.com https://ka-f.fontawesome.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://kit.fontawesome.com; font-src 'self' https://fonts.gstatic.com https://kit.fontawesome.com https://ka-f.fontawesome.com; img-src 'self' data: https: blob:; connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://kit.fontawesome.com;"
   );
   
   next();
