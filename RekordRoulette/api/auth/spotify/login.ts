@@ -7,7 +7,7 @@ export default function handler(req: any, res: any) {
     
     // Build Spotify auth URL
     const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
-    const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://recordroulette.com/api/auth/spotify/callback';
+    const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://www.recordroulette.com/api/auth/spotify/callback';
     const SCOPES = "user-read-email user-library-read user-read-recently-played user-top-read user-read-playback-state user-modify-playback-state streaming";
     
     const params = new URLSearchParams({

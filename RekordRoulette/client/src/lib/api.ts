@@ -54,7 +54,8 @@ export const api = {
   },
 
   getSpotifyLoginUrl(): string {
-    return "/auth/spotify/login";
+    // Use different routes for development vs production
+    return import.meta.env.DEV ? "/auth/spotify/login" : "/api/auth/spotify/login";
   },
 
   // Spins
