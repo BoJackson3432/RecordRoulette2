@@ -1,28 +1,37 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { spotifyAuth } from '../../../server/auth/spotify';
-import { storage } from '../../../server/storage';
+import axios from 'axios';
 import { createSession, setSessionCookie } from '../session';
 
-// Helper function to create or update user
-async function createOrUpdateUser(spotifyUser: any, tokens: any) {
-  // Check if user exists
-  const existingUser = await storage.getUserByProviderId(spotifyUser.id);
-  
-  const userData = {
-    providerId: spotifyUser.id,
-    displayName: spotifyUser.display_name || spotifyUser.id,
-    email: spotifyUser.email,
-    avatarUrl: spotifyUser.images?.[0]?.url || null,
-    accessToken: tokens.access_token,
-    refreshToken: tokens.refresh_token,
-    tokenExpires: new Date(Date.now() + (tokens.expires_in - 60) * 1000),
-  };
+const SPOTIFY_CONFIG = {
+  CLIENT_ID: process.env.SPOTIFY_CLIENT_ID!,
+  CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET!,
+  TOKEN_URL: "https://accounts.spotify.com/api/token",
+  API_BASE: "https://api.spotify.com/v1",
+  REDIRECT_URI: process.env.SPOTIFY_REDIRECT_URI!,
+};
 
-  if (existingUser) {
-    return await storage.updateUser(existingUser.id, userData);
-  } else {
-    return await storage.createUser(userData);
-  }
+async function exchangeCodeForTokens(code: string) {
+  const params = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: SPOTIFY_CONFIG.REDIRECT_URI,
+  });
+
+  const response = await axios.post(SPOTIFY_CONFIG.TOKEN_URL, params.toString(), {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${SPOTIFY_CONFIG.CLIENT_ID}:${SPOTIFY_CONFIG.CLIENT_SECRET}`).toString("base64")}`,
+    },
+  });
+
+  return response.data;
+}
+
+async function getSpotifyUser(accessToken: string) {
+  const response = await axios.get(`${SPOTIFY_CONFIG.API_BASE}/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return response.data;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -44,16 +53,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Exchange code for tokens
-    const tokens = await spotifyAuth.exchangeCodeForTokens(code);
+    const tokens = await exchangeCodeForTokens(code);
     
     // Get user info from Spotify
-    const spotifyUser = await spotifyAuth.getSpotifyUser(tokens.access_token);
+    const spotifyUser = await getSpotifyUser(tokens.access_token);
     
-    // Create or update user in database
-    const user = await createOrUpdateUser(spotifyUser, tokens);
-
+    // For now, create a mock user session until database is connected
+    const mockUserId = `spotify-${spotifyUser.id}`;
+    
     // Create session token
-    const sessionToken = createSession(user.id);
+    const sessionToken = createSession(mockUserId);
     setSessionCookie(res, sessionToken);
     
     // Clear oauth state cookie
