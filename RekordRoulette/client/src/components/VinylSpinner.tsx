@@ -77,8 +77,8 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
         className="absolute inset-0 rounded-full border-4 shadow-2xl"
         style={{ 
           borderColor: isRoulette ? "#dc2626" : "#10b981",
-          rotateX,
-          rotateY,
+          rotateX: isSpinning ? 0 : rotateX,
+          rotateY: isSpinning ? 0 : rotateY,
           scale: isSpinning ? 1 : scale,
         }}
         animate={isSpinning ? { 
@@ -225,33 +225,28 @@ export default function VinylSpinner({ isSpinning, onSpinComplete, disabled, sel
             </>
           )}
           
-          {/* Simplified vinyl grooves for better performance */}
-          {Array.from({ length: 15 }, (_, i) => {
-            const inset = i * 2 + 2;
-            const opacity = Math.max(0.15, 0.4 - (i * 0.02));
-            const isEmphasized = i % 2 === 0;
-            return (
-              <div 
-                key={i}
-                className={`absolute rounded-full border ${isEmphasized ? 'border-gray-400' : 'border-gray-500'}`}
-                style={{ 
-                  inset: `${inset * 4}px`,
-                  opacity: isEmphasized ? opacity * 1.3 : opacity,
-                  borderWidth: '0.5px'
-                }}
-              />
-            );
-          })}
+          {/* Single gradient grooves - no subpixel aliasing */}
+          <div 
+            className="absolute inset-2 rounded-full"
+            style={{
+              background: `repeating-conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                rgba(128, 128, 128, 0.15) 1deg,
+                transparent 2deg,
+                rgba(128, 128, 128, 0.1) 3deg,
+                transparent 4deg
+              )`
+            }}
+          />
           
-          {/* Enhanced texture overlay with light reflection */}
-          <motion.div 
+          {/* Static texture overlay - no independent rotation */}
+          <div 
             className="absolute inset-0 rounded-full"
             style={{
               background: "conic-gradient(from 0deg, transparent 0%, rgba(255,255,255,0.03) 25%, transparent 50%, rgba(255,255,255,0.02) 75%, transparent 100%)",
               opacity: 0.6
             }}
-            animate={isSpinning ? { rotate: 360 } : { rotate: 0 }}
-            transition={{ duration: 3.5, ease: "linear", repeat: isSpinning ? Infinity : 0 }}
           />
           
           {/* Vinyl surface texture */}
