@@ -12,6 +12,7 @@
     }
   ],
   "env": {
-    "JWT_SECRET": "@jwt_secret"
+    "JWT_SECRET": "@jwt_secret",
+    "SPOTIFY_REDIRECT_URI": "https://recordroulette.com/api/auth/spotify/callback"
   }
 }

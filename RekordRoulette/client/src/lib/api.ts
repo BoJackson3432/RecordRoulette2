@@ -54,7 +54,7 @@ export const api = {
   },
 
   getSpotifyLoginUrl(): string {
-    return "/auth/spotify/login";
+    return "/api/auth/spotify/login";
   },
 
   // Spins
