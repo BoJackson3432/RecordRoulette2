@@ -85,6 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
       console.log('CORS: Allowing origin', requestOrigin);
       res.header('Access-Control-Allow-Origin', requestOrigin);
+      res.header('Vary', 'Origin'); // Prevent cache poisoning
     } else {
       console.log('CORS: Denying origin', requestOrigin);
       // Explicitly deny disallowed origins - do NOT set ACAO header
@@ -120,7 +121,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const sessionSecret = process.env.SESSION_SECRET ?? (process.env.NODE_ENV !== 'production' ? 'dev-only-secret-change-in-production' : undefined);
   if (!sessionSecret) {
     console.error('SESSION_SECRET environment variable is required for production');
-    return; // Don't crash in development
+    if (process.env.NODE_ENV === 'production') {
+      console.error('CRITICAL: Cannot run in production without SESSION_SECRET. Exiting...');
+      process.exit(1);
+    }
+    return; // Allow development to continue
   }
   
   app.use(session({
