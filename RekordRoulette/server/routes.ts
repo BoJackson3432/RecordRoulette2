@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import path from "path";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import cookieParser from "cookie-parser";
+import { createHmac } from 'crypto';
 import { storage } from "./storage";
 import { spotifyAuth, handleSpotifyLogin, handleSpotifyCallback } from "./auth/spotify";
 import { generateShareImage } from "./services/image";
@@ -60,10 +62,36 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Add CORS headers for production
+  // Add secure CORS headers for production
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    
+    // Only allow specific origins when using credentials
+    const allowedOrigins = [
+      'http://localhost:5000',
+      'http://localhost:3000', 
+      'https://www.recordroulette.com',
+      'https://recordroulette.com'
+    ];
+    
+    // Add current Replit dev domain in development
+    if (process.env.NODE_ENV === 'development' && process.env.REPL_SLUG) {
+      allowedOrigins.push(`https://${process.env.REPL_ID}.${process.env.REPL_SLUG}.replit.dev`);
+    }
+    
+    const requestOrigin = req.headers.origin;
+    console.log('CORS DEBUG:', { requestOrigin, allowedOrigins, isAllowed: allowedOrigins.includes(requestOrigin || '') });
+    
+    if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+      console.log('CORS: Allowing origin', requestOrigin);
+      res.header('Access-Control-Allow-Origin', requestOrigin);
+    } else {
+      console.log('CORS: Denying origin', requestOrigin);
+      // Explicitly deny disallowed origins - do NOT set ACAO header
+      // This prevents any other middleware from setting a permissive header  
+      res.removeHeader('Access-Control-Allow-Origin');
+    }
+    
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,Authorization');
     if (req.method === 'OPTIONS') {
@@ -88,20 +116,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize PostgreSQL session store
   const PostgreSqlStore = connectPgSimple(session);
   
-  // Session middleware with PostgreSQL store
+  // Secure session middleware with PostgreSQL store
+  const sessionSecret = process.env.SESSION_SECRET ?? (process.env.NODE_ENV !== 'production' ? 'dev-only-secret-change-in-production' : undefined);
+  if (!sessionSecret) {
+    console.error('SESSION_SECRET environment variable is required for production');
+    return; // Don't crash in development
+  }
+  
   app.use(session({
     store: new PostgreSqlStore({
       conString: process.env.DATABASE_URL,
       tableName: 'user_sessions',
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || "your-session-secret",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: { 
       httpOnly: true, 
       sameSite: "lax", 
-      secure: false, // Fixed: disable secure cookies for now
+      secure: process.env.NODE_ENV === 'production', // Secure in production
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     },
   }));
@@ -116,13 +150,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/me", async (req, res) => {
-    try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
+  // Mount cookie parser for HMAC cookie authentication
+  app.use(cookieParser());
 
-      const user = await storage.getUserWithStreak(req.session.userId);
+  // Unified authentication middleware - works with both session and HMAC cookies
+  const authenticateUser = (req: any, res: any, next: any) => {
+    // Try HMAC cookie auth first (production style)
+    const userId = req.cookies?.user_id;
+    const sessionToken = req.cookies?.session_token;
+    
+    if (userId && sessionToken && userId.startsWith('spotify-')) {
+      try {
+        const [payloadB64, signatureB64] = sessionToken.split('.');
+        if (payloadB64 && signatureB64) {
+          const secret = process.env.SESSION_SECRET;
+          if (secret) {
+            const expectedSignature = createHmac('sha256', secret).update(payloadB64).digest('base64url');
+            if (signatureB64 === expectedSignature) {
+              const sessionData = JSON.parse(Buffer.from(payloadB64, 'base64url').toString());
+              if (sessionData.userId === userId) {
+                const nowSeconds = Math.floor(Date.now() / 1000);
+                if (sessionData.exp && nowSeconds <= sessionData.exp) {
+                  // Valid HMAC session
+                  req.authenticatedUserId = userId;
+                  return next();
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.log('HMAC auth failed, trying session auth');
+      }
+    }
+    
+    // Fall back to Express session auth (development)
+    if (req.session.userId) {
+      req.authenticatedUserId = req.session.userId;
+      return next();
+    }
+    
+    return res.status(401).json({ error: "Not authenticated" });
+  };
+
+  app.get("/api/me", authenticateUser, async (req, res) => {
+    try {
+      const user = await storage.getUserWithStreak((req as any).authenticatedUserId);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }

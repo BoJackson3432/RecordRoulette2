@@ -2,8 +2,8 @@ import { createHmac } from 'crypto';
 
 export default function handler(req: any, res: any) {
   try {
-    // Log request info for debugging
-    console.log('API /me called, cookies:', req.cookies);
+    // Log request info for debugging (no sensitive data)
+    console.log('API /me called, has cookies:', Object.keys(req.cookies || {}));
     
     // Check if user is authenticated via secure session
     const userId = req.cookies?.user_id;
@@ -25,8 +25,14 @@ export default function handler(req: any, res: any) {
         return res.status(401).json({ error: 'Invalid token format' });
       }
       
-      // Verify signature
-      const secret = process.env.SESSION_SECRET || 'fallback-dev-secret-change-in-production';
+      // Verify signature  
+      const secret = process.env.SESSION_SECRET;
+      
+      if (!secret) {
+        console.error('SESSION_SECRET environment variable is required');
+        return res.status(500).json({ error: 'Server configuration error' });
+      }
+      
       const expectedSignature = createHmac('sha256', secret).update(payloadB64).digest('base64url');
       
       if (signatureB64 !== expectedSignature) {
@@ -50,7 +56,7 @@ export default function handler(req: any, res: any) {
       }
       
     } catch (error) {
-      console.log('Token validation error:', error.message);
+      console.log('Token validation error - no sensitive data logged');
       return res.status(401).json({ error: 'Invalid token' });
     }
 

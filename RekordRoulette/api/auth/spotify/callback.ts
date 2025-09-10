@@ -13,9 +13,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect('/?error=invalid_code');
     }
 
-    // Verify state from cookie
+    // Verify state from cookie - require both to exist and match
     const storedState = req.cookies.oauth_state;
-    if (state !== storedState) {
+    if (!state || !storedState || typeof state !== 'string' || state !== storedState) {
+      console.error('OAuth state validation failed - state:', !!state, 'stored:', !!storedState, 'match:', state === storedState);
       return res.redirect('/?error=invalid_state');
     }
 
@@ -85,7 +86,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
     
     const payload = Buffer.from(JSON.stringify(sessionData)).toString('base64url');
-    const secret = process.env.SESSION_SECRET || 'fallback-dev-secret-change-in-production';
+    const secret = process.env.SESSION_SECRET;
+    
+    if (!secret) {
+      console.error('SESSION_SECRET environment variable is required for production');
+      return res.redirect('/?error=server_configuration_error');
+    }
+    
     const signature = createHmac('sha256', secret).update(payload).digest('base64url');
     const sessionToken = `${payload}.${signature}`;
     
