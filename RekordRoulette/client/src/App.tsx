@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Router, Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -118,7 +118,7 @@ function AppContent() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <Router />
+        <Routes />
       </motion.main>
       
       <Footer />
@@ -259,8 +259,8 @@ function Footer() {
   );
 }
 
-// Router Component
-function Router() {
+// Routes Component
+function Routes() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
@@ -285,7 +285,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppContent />
+        <Router base={import.meta.env.BASE_URL || "/"}>
+          <AppContent />
+        </Router>
       </TooltipProvider>
     </QueryClientProvider>
   );
