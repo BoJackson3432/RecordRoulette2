@@ -147,8 +147,8 @@ function Navigation() {
             whileTap={{ scale: 0.95 }}
             data-testid="nav-logo"
           >
-            <div className="w-10 h-10 flex items-center justify-center">
-              <img src="/new-logo.png" alt="RecordRoulette Logo" className="w-10 h-10 object-contain" />
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+              <i className="fas fa-record-vinyl text-primary-foreground text-xl"></i>
             </div>
             <div className="font-bold text-xl">
               <span className="text-primary">Record</span>

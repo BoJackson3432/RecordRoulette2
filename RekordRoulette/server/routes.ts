@@ -880,6 +880,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter out greatest hits and compilation albums
       const isGreatestHits = (album: any): boolean => {
         const albumName = album.name?.toLowerCase() || "";
+        const albumType = album.album_type?.toLowerCase() || "";
+        
+        // Check album type first - compilation albums are typically greatest hits
+        if (albumType === "compilation") {
+          return true;
+        }
+        
         const greatestHitsPatterns = [
           "greatest hits",
           "best of",
@@ -887,7 +894,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "greatest",
           "hits",
           "collection",
-          "anthology",
+          "anthology", 
           "essential",
           "essentials",
           "complete",
@@ -898,7 +905,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "very best",
           "singles",
           "compilation",
-          "retrospective"
+          "retrospective",
+          "selected",
+          "classics",
+          "favorites",
+          "favourites"
         ];
         
         return greatestHitsPatterns.some(pattern => albumName.includes(pattern));
@@ -922,12 +933,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         albums = albums.concat(greatestHitsAlbums.slice(0, Math.min(5, originalCount - albums.length)));
       }
 
-      // Filter out singles and short EPs - ensure albums have at least 4 tracks
+      // Filter out singles and short EPs - ensure albums have at least 5 tracks for professional quality
       const beforeTrackFilter = albums.length;
-      albums = albums.filter(album => album.total_tracks >= 4);
+      albums = albums.filter(album => album.total_tracks >= 5);
       
       if (albums.length < beforeTrackFilter) {
-        console.log(`Filtered out ${beforeTrackFilter - albums.length} singles/short EPs (albums with < 4 tracks)`);
+        console.log(`Filtered out ${beforeTrackFilter - albums.length} singles/short EPs (albums with < 5 tracks)`);
       }
 
       // Get recent spins to avoid duplicates (last 30 days)
