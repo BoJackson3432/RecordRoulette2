@@ -6,7 +6,7 @@ export default function handler(req: any, res: any) {
     res.setHeader('Set-Cookie', `oauth_state=${state}; HttpOnly; Path=/; Max-Age=600; SameSite=Lax`);
     
     // Build Spotify auth URL
-    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
     const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://recordroulette.com/api/auth/spotify/callback';
     const SCOPES = "user-read-email user-library-read user-read-recently-played user-top-read user-read-playback-state user-modify-playback-state streaming";
     

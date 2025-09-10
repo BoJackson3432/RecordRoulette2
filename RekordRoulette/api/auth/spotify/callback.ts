@@ -17,8 +17,8 @@ export default async function handler(req: any, res: any) {
     }
 
     // Exchange code for tokens - simplified
-    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-    const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
+    const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET || '';
     const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://recordroulette.com/api/auth/spotify/callback';
     
     const params = new URLSearchParams({
