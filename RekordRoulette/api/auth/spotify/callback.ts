@@ -1,4 +1,6 @@
-export default async function handler(req: any, res: any) {
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { code, state, error } = req.query;
 
@@ -32,7 +34,7 @@ export default async function handler(req: any, res: any) {
       method: 'POST',
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+        Authorization: `Basic ${btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)},`
       },
       body: params.toString()
     });
