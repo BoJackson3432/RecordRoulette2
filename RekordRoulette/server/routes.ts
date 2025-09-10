@@ -215,16 +215,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark onboarding as completed
-  app.post('/api/me/onboarding', async (req, res) => {
+  app.post('/api/me/onboarding', authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: 'Not authenticated' });
-      }
-
       // Update user onboarding status
       await db.update(users)
         .set({ onboardingCompleted: true })
-        .where(eq(users.id, req.session.userId));
+        .where(eq(users.id, (req as any).authenticatedUserId));
 
       res.json({ success: true });
     } catch (error) {
@@ -234,75 +230,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Referral System Routes
-  app.get('/api/referrals/code', (req, res) => {
+  app.get('/api/referrals/code', authenticateUser, (req, res) => {
     // Add user to req for TypeScript compatibility
-    (req as any).user = { id: req.session.userId };
+    (req as any).user = { id: (req as any).authenticatedUserId };
     getUserReferralCode(req as any, res);
   });
 
-  app.get('/api/referrals/stats', (req, res) => {
+  app.get('/api/referrals/stats', authenticateUser, (req, res) => {
     // Add user to req for TypeScript compatibility
-    (req as any).user = { id: req.session.userId };
+    (req as any).user = { id: (req as any).authenticatedUserId };
     getReferralStats(req as any, res);
   });
 
-  app.post('/api/referrals/share', (req, res) => {
+  app.post('/api/referrals/share', authenticateUser, (req, res) => {
     // Add user to req for TypeScript compatibility
-    (req as any).user = { id: req.session.userId };
+    (req as any).user = { id: (req as any).authenticatedUserId };
     shareReferral(req as any, res);
   });
 
   // Mood Discovery Routes
   app.get('/api/moods', getMoods);
   
-  app.get('/api/moods/preferences', getUserMoodPreferences);
+  app.get('/api/moods/preferences', authenticateUser, getUserMoodPreferences);
   
-  app.get('/api/discover/mood/:moodId', discoverByMood);
+  app.get('/api/discover/mood/:moodId', authenticateUser, discoverByMood);
   
-  app.get('/api/discover/time/:timeContext', discoverByTime);
+  app.get('/api/discover/time/:timeContext', authenticateUser, discoverByTime);
 
   // Leaderboard and Competition Routes
   app.get('/api/leaderboards', getLeaderboards);
   
-  app.get('/api/leaderboards/ranking', getUserRanking);
+  app.get('/api/leaderboards/ranking', authenticateUser, getUserRanking);
   
-  app.post('/api/leaderboards/share', shareCompetitionResult);
+  app.post('/api/leaderboards/share', authenticateUser, shareCompetitionResult);
 
   // Premium Features Routes
-  app.get('/api/premium/status', getPremiumStatus);
+  app.get('/api/premium/status', authenticateUser, getPremiumStatus);
   
-  app.get('/api/premium/analytics', getAdvancedAnalytics);
+  app.get('/api/premium/analytics', authenticateUser, getAdvancedAnalytics);
   
-  app.post('/api/premium/upgrade', upgradePremium);
+  app.post('/api/premium/upgrade', authenticateUser, upgradePremium);
   
-  app.put('/api/premium/settings', updatePremiumSettings);
+  app.put('/api/premium/settings', authenticateUser, updatePremiumSettings);
 
   // Analytics and Behavior Tracking Routes
-  app.get('/api/analytics/dashboard', getAnalyticsDashboard);
+  app.get('/api/analytics/dashboard', authenticateUser, getAnalyticsDashboard);
   
-  app.post('/api/analytics/events', trackBehaviorEvent);
+  app.post('/api/analytics/events', authenticateUser, trackBehaviorEvent);
   
-  app.post('/api/analytics/session', createSession);
+  app.post('/api/analytics/session', authenticateUser, createSession);
   
-  app.post('/api/analytics/session/end', endSession);
+  app.post('/api/analytics/session/end', authenticateUser, endSession);
 
   // Collaborative Features Routes
-  app.get('/api/friends/discover', findFriends);
+  app.get('/api/friends/discover', authenticateUser, findFriends);
   
-  app.post('/api/challenges/create', createChallenge);
+  app.post('/api/challenges/create', authenticateUser, createChallenge);
   
-  app.get('/api/challenges', getChallenges);
+  app.get('/api/challenges', authenticateUser, getChallenges);
   
-  app.post('/api/challenges/:challengeId/join', joinChallenge);
+  app.post('/api/challenges/:challengeId/join', authenticateUser, joinChallenge);
   
-  app.get('/api/recommendations/personalized', getPersonalizedRecommendations);
+  app.get('/api/recommendations/personalized', authenticateUser, getPersonalizedRecommendations);
 
   // Check if user can spin today
-  app.get("/api/spin/status", async (req, res) => {
+  app.get("/api/spin/status", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
 
       // TEMPORARILY DISABLED: Get user's last spin today
       // const today = new Date();
@@ -338,13 +331,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get spin history
-  app.get("/api/spins/history", async (req, res) => {
+  app.get("/api/spins/history", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const spins = await storage.getSpinsByUser(req.session.userId, 50); // Get last 50 spins
+      const spins = await storage.getSpinsByUser((req as any).authenticatedUserId, 50); // Get last 50 spins
       res.json(spins);
     } catch (error) {
       console.error("Failed to get spin history:", error);
@@ -354,13 +343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Favorites API endpoints
   // Get user's favorite albums
-  app.get("/api/favorites", async (req, res) => {
+  app.get("/api/favorites", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const favorites = await storage.getFavoritesByUser(req.session.userId);
+      const favorites = await storage.getFavoritesByUser((req as any).authenticatedUserId);
       res.json(favorites);
     } catch (error) {
       console.error("Failed to get favorites:", error);
@@ -369,18 +354,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Batch check favorite status for multiple albums (MUST come before :albumId route)
-  app.post("/api/favorites/batch-status", async (req, res) => {
+  app.post("/api/favorites/batch-status", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { albumIds } = req.body;
       if (!Array.isArray(albumIds)) {
         return res.status(400).json({ error: "albumIds must be an array" });
       }
 
-      const favoriteStatuses = await storage.batchCheckFavorites(req.session.userId, albumIds);
+      const favoriteStatuses = await storage.batchCheckFavorites((req as any).authenticatedUserId, albumIds);
       res.json(favoriteStatuses);
     } catch (error) {
       console.error("Failed to batch check favorite status:", error);
@@ -389,21 +370,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add album to favorites
-  app.post("/api/favorites/:albumId", async (req, res) => {
+  app.post("/api/favorites/:albumId", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { albumId } = req.params;
       
       // Check if already favorite
-      const isAlreadyFavorite = await storage.isFavorite(req.session.userId, albumId);
+      const isAlreadyFavorite = await storage.isFavorite((req as any).authenticatedUserId, albumId);
       if (isAlreadyFavorite) {
         return res.status(400).json({ error: "Album already in favorites" });
       }
 
-      const favorite = await storage.addFavorite(req.session.userId, albumId);
+      const favorite = await storage.addFavorite((req as any).authenticatedUserId, albumId);
       res.json({ success: true, favorite });
     } catch (error) {
       console.error("Failed to add favorite:", error);
@@ -412,14 +389,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove album from favorites
-  app.delete("/api/favorites/:albumId", async (req, res) => {
+  app.delete("/api/favorites/:albumId", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { albumId } = req.params;
-      await storage.removeFavorite(req.session.userId, albumId);
+      await storage.removeFavorite((req as any).authenticatedUserId, albumId);
       res.json({ success: true });
     } catch (error) {
       console.error("Failed to remove favorite:", error);
@@ -428,14 +401,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check if album is favorite
-  app.get("/api/favorites/:albumId/status", async (req, res) => {
+  app.get("/api/favorites/:albumId/status", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { albumId } = req.params;
-      const isFavorite = await storage.isFavorite(req.session.userId, albumId);
+      const isFavorite = await storage.isFavorite((req as any).authenticatedUserId, albumId);
       res.json({ isFavorite });
     } catch (error) {
       console.error("Failed to check favorite status:", error);
@@ -444,14 +413,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Play album on Spotify
-  app.post("/api/spotify/play/:albumId", async (req, res) => {
+  app.post("/api/spotify/play/:albumId", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { albumId } = req.params;
-      const accessToken = await spotifyAuth.getValidAccessToken(req.session.userId);
+      const accessToken = await spotifyAuth.getValidAccessToken((req as any).authenticatedUserId);
       
       try {
         // Try to start playback through API first
@@ -484,13 +449,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check if user can spin today
   // Album preview route (doesn't count as a spin)
-  app.get("/api/album/preview", async (req, res) => {
+  app.get("/api/album/preview", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const accessToken = await spotifyAuth.getValidAccessToken(req.session.userId);
+      const accessToken = await spotifyAuth.getValidAccessToken((req as any).authenticatedUserId);
       const mode = (req.query.mode as string) || "personal";
 
       // Get album based on discovery mode (same logic as spin but don't create spin record)
@@ -583,19 +544,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Commit to album after preview (this creates the actual spin)
-  app.post("/api/album/commit", async (req, res) => {
+  app.post("/api/album/commit", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const { albumId, mode } = req.body;
       if (!albumId || !mode) {
         return res.status(400).json({ error: "Album ID and mode required" });
       }
 
       // Daily limit temporarily disabled
-      // const userSpins = await storage.getSpinsByUser(req.session.userId);
+      // const userSpins = await storage.getSpinsByUser((req as any).authenticatedUserId);
       // const today = new Date();
       // today.setHours(0, 0, 0, 0);
       // const todaySpins = userSpins.filter(spin => {
@@ -608,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       //   return res.status(429).json({ error: "Daily limit reached. Come back tomorrow!" });
       // }
 
-      const accessToken = await spotifyAuth.getValidAccessToken(req.session.userId);
+      const accessToken = await spotifyAuth.getValidAccessToken((req as any).authenticatedUserId);
 
       // Get album details if not in database
       let album = await storage.getAlbum(albumId);
@@ -678,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create spin record
       const spin = await storage.createSpin({
-        userId: req.session.userId,
+        userId: (req as any).authenticatedUserId,
         mode,
         albumId: album.id,
         seed: mode === "roulette" ? "random_preview" : mode,
@@ -700,13 +657,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/spin/can-spin", async (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
+  app.get("/api/spin/can-spin", authenticateUser, async (req, res) => {
     try {
-      const userWithStreak = await storage.getUserWithStreak(req.session.userId);
+      const userWithStreak = await storage.getUserWithStreak((req as any).authenticatedUserId);
       const streak = userWithStreak?.streak;
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -744,11 +697,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Spin routes
-  app.post("/api/spin", async (req, res) => {
+  app.post("/api/spin", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
 
       // Daily limit using streak data temporarily disabled
       // const userWithStreak = await storage.getUserWithStreak(req.session.userId);
@@ -774,7 +724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // }
 
       const { mode = "saved" } = req.body;
-      const accessToken = await spotifyAuth.getValidAccessToken(req.session.userId);
+      const accessToken = await spotifyAuth.getValidAccessToken((req as any).authenticatedUserId);
 
       let albums: any[] = [];
 
@@ -1088,7 +1038,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       albums = filterProfessionalQuality(albums);
 
       // Get recent spins to avoid duplicates (last 30 days)
-      const recentSpins = await storage.getRecentSpinsByUser(req.session.userId, 30);
+      const recentSpins = await storage.getRecentSpinsByUser((req as any).authenticatedUserId, 30);
       const recentAlbumIds = new Set(recentSpins.map(spin => spin.albumId));
 
       // Filter out recently spun albums
@@ -1123,7 +1073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create spin record
       const spin = await storage.createSpin({
-        userId: req.session.userId,
+        userId: (req as any).authenticatedUserId,
         mode: mode,
         albumId: randomAlbum.id,
       });
@@ -1174,13 +1124,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Mark as listened and update streak
-  app.post("/api/listened", async (req, res) => {
+  app.post("/api/listened", authenticateUser, async (req, res) => {
     try {
       const { spinId } = z.object({ spinId: z.string() }).parse(req.body);
-      
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
 
       // Update spin as listened
       await storage.updateSpin(spinId, { listenedAt: new Date() });
@@ -1189,12 +1135,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const today = new Date();
       const todayString = today.toISOString().slice(0, 10);
       
-      let streak = await storage.getStreak(req.session.userId);
+      let streak = await storage.getStreak((req as any).authenticatedUserId);
       
       if (!streak) {
         // Create new streak
         streak = await storage.upsertStreak({
-          userId: req.session.userId,
+          userId: (req as any).authenticatedUserId,
           current: 1,
           longest: 1,
           lastSpinDate: today,
@@ -1223,7 +1169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newLongest = Math.max(streak.longest, newCurrent);
         
         streak = await storage.upsertStreak({
-          userId: req.session.userId,
+          userId: (req as any).authenticatedUserId,
           current: newCurrent,
           longest: newLongest,
           lastSpinDate: today,
@@ -1232,8 +1178,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 🎉 NEW: Check for trophies and update weekly stats
       const [newTrophies] = await Promise.all([
-        trophyService.checkAndAwardTrophies(req.session.userId),
-        weeklyStatsService.updateWeeklyStatsForSpin(req.session.userId, today),
+        trophyService.checkAndAwardTrophies((req as any).authenticatedUserId),
+        weeklyStatsService.updateWeeklyStatsForSpin((req as any).authenticatedUserId, today),
       ]);
 
       res.json({
@@ -1275,13 +1221,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user analytics
-  app.get("/api/profile/analytics", async (req, res) => {
+  app.get("/api/profile/analytics", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const analytics = await analyticsService.getUserAnalytics(req.session.userId);
+      const analytics = await analyticsService.getUserAnalytics((req as any).authenticatedUserId);
       res.json(analytics);
     } catch (error) {
       console.error("Analytics error:", error);
@@ -1290,13 +1232,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's recent spins
-  app.get("/api/profile/spins", async (req, res) => {
+  app.get("/api/profile/spins", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const spins = await storage.getSpinsByUser(req.session.userId, 10);
+      const spins = await storage.getSpinsByUser((req as any).authenticatedUserId, 10);
       
       res.json(spins.map(spin => ({
         id: spin.id,
@@ -1347,13 +1285,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's trophies
-  app.get("/api/profile/trophies", async (req, res) => {
+  app.get("/api/profile/trophies", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const trophies = await trophyService.getUserTrophies(req.session.userId);
+      const trophies = await trophyService.getUserTrophies((req as any).authenticatedUserId);
       res.json(trophies);
     } catch (error) {
       console.error("Get trophies error:", error);
@@ -1362,13 +1296,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all trophies with user progress
-  app.get("/api/trophies", async (req, res) => {
+  app.get("/api/trophies", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const trophies = await trophyService.getTrophiesWithProgress(req.session.userId);
+      const trophies = await trophyService.getTrophiesWithProgress((req as any).authenticatedUserId);
       res.json(trophies);
     } catch (error) {
       console.error("Get all trophies error:", error);
@@ -1377,13 +1307,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check and award new trophies for user
-  app.post("/api/profile/check-trophies", async (req, res) => {
+  app.post("/api/profile/check-trophies", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const newTrophies = await trophyService.checkAndAwardTrophies(req.session.userId);
+      const newTrophies = await trophyService.checkAndAwardTrophies((req as any).authenticatedUserId);
       res.json({ newTrophies });
     } catch (error) {
       console.error("Check trophies error:", error);
@@ -1394,16 +1320,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Weekly Stats Routes
 
   // Get user's weekly recap
-  app.get("/api/profile/weekly-recap", async (req, res) => {
+  app.get("/api/profile/weekly-recap", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
       const weekStartParam = req.query.weekStart as string;
       const weekStart = weekStartParam ? new Date(weekStartParam) : undefined;
       
-      const recap = await weeklyStatsService.generateWeeklyRecap(req.session.userId, weekStart);
+      const recap = await weeklyStatsService.generateWeeklyRecap((req as any).authenticatedUserId, weekStart);
       res.json(recap);
     } catch (error) {
       console.error("Weekly recap error:", error);
@@ -1412,13 +1334,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user's recent weekly stats
-  app.get("/api/profile/weekly-stats", async (req, res) => {
+  app.get("/api/profile/weekly-stats", authenticateUser, async (req, res) => {
     try {
-      if (!req.session.userId) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      const stats = await weeklyStatsService.getUserRecentWeeklyStats(req.session.userId);
+      const stats = await weeklyStatsService.getUserRecentWeeklyStats((req as any).authenticatedUserId);
       res.json(stats);
     } catch (error) {
       console.error("Weekly stats error:", error);
@@ -1427,7 +1345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notification preferences routes
-  app.get("/api/notifications/preferences", async (req, res) => {
+  app.get("/api/notifications/preferences", authenticateUser, async (req, res) => {
     try {
       // Return default preferences for now
       res.json({
@@ -1441,7 +1359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/notifications/preferences", async (req, res) => {
+  app.put("/api/notifications/preferences", authenticateUser, async (req, res) => {
     try {
       const preferences = req.body;
       console.log("Notification preferences updated:", preferences);
