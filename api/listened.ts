@@ -1,4 +1,4 @@
-import { requireAuthentication } from '../shared/auth';
+import { requireAuthentication } from '../RekordRoulette/shared/auth';
 
 export default function handler(req: any, res: any) {
   try {

@@ -1,18 +1,21 @@
 {
-  "name": "workspace",
+  "name": "recordroulette",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "RecordRoulette - Music Discovery Platform",
   "dependencies": {
     "@types/cookie-parser": "^1.4.9",
     "@vercel/node": "^5.3.22",
     "cookie-parser": "^1.4.7",
+    "drizzle-orm": "^0.39.1",
+    "postgres": "^3.4.4",
     "vercel": "^47.1.3"
   }
 }
