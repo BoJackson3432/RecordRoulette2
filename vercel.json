@@ -1,7 +1,7 @@
 {
   "buildCommand": "cd RekordRoulette && npm run build",
   "outputDirectory": "RekordRoulette/dist/public",
-  "installCommand": "cd RekordRoulette && npm install",
+  "installCommand": "npm install && cd RekordRoulette && npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
