@@ -1,24 +1,20 @@
 {
-  "name": "recordroulette",
+  "name": "recordroulette-clean",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
-  "engines": {
-    "node": "20.x"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite --host 0.0.0.0 --port 5000",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 5000"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "description": "RecordRoulette - Music Discovery Platform",
   "dependencies": {
-    "@types/cookie-parser": "^1.4.9",
-    "@vercel/node": "^5.3.22",
-    "cookie-parser": "^1.4.7",
-    "drizzle-orm": "^0.39.1",
-    "postgres": "^3.4.4",
-    "vercel": "^47.1.3"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0"
   }
 }
