@@ -1,11 +1,6 @@
 {
   "buildCommand": "cd RekordRoulette && npm run build",
   "outputDirectory": "RekordRoulette/dist/public",
-  "functions": {
-    "api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "installCommand": "cd RekordRoulette && npm install",
   "framework": null,
   "rewrites": [
