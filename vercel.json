@@ -1,6 +1,11 @@
 {
   "buildCommand": "cd RekordRoulette && npm run build",
   "outputDirectory": "RekordRoulette/dist/public",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/me",
