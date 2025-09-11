@@ -1,7 +1,13 @@
 {
+  "version": 2,
   "buildCommand": "cd RekordRoulette && npm run build",
-  "outputDirectory": "RekordRoulette/dist/public", 
+  "outputDirectory": "RekordRoulette/dist/public",
   "installCommand": "cd RekordRoulette && npm install",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -13,6 +19,6 @@
     }
   ],
   "env": {
-    "SPOTIFY_REDIRECT_URI": "https://www.recordroulette.com/api/auth/spotify/callback"
+    "SPOTIFY_REDIRECT_URI": "https://recordroulette-fresh.vercel.app/api/auth/spotify/callback"
   }
 }
