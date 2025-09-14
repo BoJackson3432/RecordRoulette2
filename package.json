@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5000",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0 --port 5000"
+    "preview": "vite preview --host 0.0.0.0 --port 5000",
+    "start": "serve -s dist -l 5000"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -15,6 +16,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "serve": "^14.2.5",
     "vite": "^5.0.0"
   }
 }

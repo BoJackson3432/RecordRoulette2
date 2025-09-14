@@ -15,15 +15,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "RecordRoulette Clean"
+args = "RecordRoulette Production"
 
 [[workflows.workflow]]
-name = "RecordRoulette Clean"
+name = "RecordRoulette Production"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "npm run start"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -32,10 +32,6 @@ outputType = "webview"
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 34811
-externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
