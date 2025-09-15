@@ -27,6 +27,15 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Disable eval-based source maps in production (CSP requirement)
+    sourcemap: process.env.NODE_ENV === 'production' ? false : true,
+    minify: 'terser', // Use terser instead of esbuild for better CSP compatibility
+    rollupOptions: {
+      output: {
+        // Ensure no eval in production chunks
+        format: 'es',
+      },
+    },
   },
   server: {
     fs: {

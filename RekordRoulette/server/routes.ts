@@ -67,16 +67,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    // Add Content Security Policy (safer without unsafe-eval)
+    // Content Security Policy - Following ChatGPT's recommendations
+    // TEMP: Allow 'unsafe-eval' until build is configured to not require eval
     res.setHeader('Content-Security-Policy', 
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://kit.fontawesome.com https://*.vercel.app; " +
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://kit.fontawesome.com https://accounts.spotify.com https://sdk.scdn.co; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-      "font-src 'self' https://fonts.gstatic.com https://kit.fontawesome.com; " +
+      "font-src 'self' data: https://fonts.gstatic.com https://kit.fontawesome.com; " +
       "img-src 'self' data: blob: https:; " +
       "media-src 'self' data: blob: https:; " +
-      "connect-src 'self' https://api.spotify.com https://accounts.spotify.com wss: ws:; " +
+      "connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://sdk.scdn.co; " +
       "frame-src 'self' https://open.spotify.com; " +
+      "object-src 'none'; " +
+      "base-uri 'self'; " +
+      "frame-ancestors 'none'; " +
       "worker-src 'self' blob:;"
     );
     
