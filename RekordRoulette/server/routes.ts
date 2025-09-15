@@ -67,16 +67,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
-    // Add Content Security Policy that allows necessary scripts
+    // Add Content Security Policy (safer without unsafe-eval)
     res.setHeader('Content-Security-Policy', 
       "default-src 'self'; " +
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://kit.fontawesome.com; " +
+      "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://kit.fontawesome.com https://*.vercel.app; " +
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
       "font-src 'self' https://fonts.gstatic.com https://kit.fontawesome.com; " +
       "img-src 'self' data: blob: https:; " +
       "media-src 'self' data: blob: https:; " +
-      "connect-src 'self' https://api.spotify.com https://accounts.spotify.com; " +
-      "frame-src 'self' https://open.spotify.com;"
+      "connect-src 'self' https://api.spotify.com https://accounts.spotify.com wss: ws:; " +
+      "frame-src 'self' https://open.spotify.com; " +
+      "worker-src 'self' blob:;"
     );
     
     next();
