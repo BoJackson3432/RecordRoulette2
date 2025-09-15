@@ -60,6 +60,28 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add security headers and CSP
+  app.use((req, res, next) => {
+    // Add no-cache headers to prevent caching issues
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    // Add Content Security Policy that allows necessary scripts
+    res.setHeader('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://kit.fontawesome.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com https://kit.fontawesome.com; " +
+      "img-src 'self' data: blob: https:; " +
+      "media-src 'self' data: blob: https:; " +
+      "connect-src 'self' https://api.spotify.com https://accounts.spotify.com; " +
+      "frame-src 'self' https://open.spotify.com;"
+    );
+    
+    next();
+  });
+
   // Serve PWA files with correct MIME types
   app.get('/sw.js', (req, res) => {
     res.setHeader('Content-Type', 'application/javascript');
@@ -101,6 +123,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     req.session.destroy(() => {
       res.json({ ok: true });
     });
+  });
+
+  // Authentication check endpoint
+  app.get("/api/auth/check", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ authenticated: false });
+      }
+
+      const user = await storage.getUserWithStreak(req.session.userId);
+      if (!user) {
+        return res.status(401).json({ authenticated: false });
+      }
+
+      res.json({ 
+        authenticated: true,
+        user: {
+          id: user.id,
+          displayName: user.displayName,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          onboardingCompleted: user.onboardingCompleted,
+          streak: user.streak || { current: 0, longest: 0 },
+        }
+      });
+    } catch (error) {
+      console.error("Auth check error:", error);
+      res.status(500).json({ error: "Failed to check authentication" });
+    }
   });
 
   app.get("/api/me", async (req, res) => {
