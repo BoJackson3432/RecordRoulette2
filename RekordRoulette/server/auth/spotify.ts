@@ -33,9 +33,7 @@ export class SpotifyAuth {
     
     // Use provided redirect URI or dynamically determine based on environment
     this.redirectUri = process.env.SPOTIFY_REDIRECT_URI || 
-                      (process.env.NODE_ENV === 'production' 
-                        ? 'https://recordroulette.com/auth/spotify/callback'
-                        : `https://${process.env.REPLIT_DEV_DOMAIN || `rekord-roulette-${process.env.REPL_OWNER}.replit.app`}/auth/spotify/callback`);
+                      `https://${process.env.REPLIT_DEV_DOMAIN || `rekord-roulette-${process.env.REPL_OWNER}.replit.app`}/auth/spotify/callback`;
 
     if (!this.clientId || !this.clientSecret) {
       throw new Error("Missing Spotify OAuth configuration");
